@@ -7,7 +7,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_curve, auc
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 from scipy.stats import ttest_ind
 
 #Caricamento modello
