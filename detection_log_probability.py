@@ -29,7 +29,7 @@ print("Modello caricato.")
 #Caricamento e divisione del dataset
 print("\nCaricamento del dataset OpenLLMText...")
 
-BASE_PATH = '/content/drive/MyDrive/OpenTextLLM'
+BASE_PATH = './OpenTextLLM'
 SOURCES_AI = ['ChatGPT', 'LLAMA', 'PaLM']
 SOURCE_HUMAN = 'Human'
 
