@@ -88,7 +88,7 @@ def generate_with_watermark_from_ids(model, tokenizer, input_ids, max_new_tokens
     watermarked_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
     return watermarked_text
 
-"""#Test di generazione ed esempio di utilizzo del detector"""
+"""Test di generazione ed esempio di utilizzo del detector"""
 
 # Test Generazione
 watermarked_output = generate_with_watermark_from_ids(model, tokenizer, input_ids)
@@ -103,7 +103,6 @@ print("Testo non watermarked:", unwatermarked_text)
 #Detector
 
 #Definizione della funzione di detection
-
 def detect_watermark(text, tokenizer, secret_key, gamma):
     # Codifica il testo in una sequenza di token
     input_ids = tokenizer(text, return_tensors="pt").input_ids
