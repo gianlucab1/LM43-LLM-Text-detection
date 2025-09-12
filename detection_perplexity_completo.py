@@ -36,7 +36,7 @@ print("Modello caricato con successo.")
 print("\nCaricamento del dataset OpenLLMText...")
 
 # Percorso della tua cartella OpenLLMText
-BASE_PATH = '/content/drive/MyDrive/OpenTextLLM'
+BASE_PATH = './OpenTextLLM'
 SOURCES_AI = ['ChatGPT', 'LLAMA', 'PaLM']
 SOURCE_HUMAN = 'Human'
 
