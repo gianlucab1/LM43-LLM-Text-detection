@@ -1,4 +1,5 @@
-!pip install transformers datasets
+
+#!pip install transformers datasets
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
@@ -14,10 +15,9 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report, accuracy_score, confusion_matrix
 from torch.utils.data import DataLoader, Subset
-from tqdm import tqdm
 
 #Pre-processing dei dati
-BASE_PATH = '/content/drive/MyDrive/OpenTextLLM'
+BASE_PATH = './OpenTextLLM'
 SOURCES_MAP = {
     'Human': 0, 'ChatGPT': 1, 'LLAMA': 1, 'PaLM': 1, 'GPT-2':1
 }
@@ -108,7 +108,6 @@ tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
 
 #Funzione di tokenizzazione
 def tokenize_function(examples):
-    # Use max_length=512 to match potential model input size
     return tokenizer(examples['text'], padding='max_length', truncation=True, max_length=512)
 
 print("\n--- Tokenizzazione dei dataset (potrebbe richiedere qualche minuto) ---")
@@ -128,7 +127,7 @@ tokenized_datasets.save_to_disk(SAVE_PATH_TOKENIZED)
 print("--- Salvataggio completato ---")
 
 #Carica i dati tokenizzati (Usata per evitare di ripetere la tokenizzazione in sessioni differenti)
-SAVE_PATH_TOKENIZED = '/content/drive/MyDrive/OpenTextLLM/tokenized_datasets_v2'
+SAVE_PATH_TOKENIZED = './tokenized_dataset'
 
 print(f"--- Caricamento dei dataset tokenizzati da '{SAVE_PATH_TOKENIZED}' ---")
 try:
@@ -146,7 +145,6 @@ try:
         print(train_df['labels'].value_counts(normalize=True))
         tokenized_datasets.set_format(type='torch', columns=columns_to_keep)
 
-
 except Exception as e:
     print(f"Errore nel caricamento dei dataset tokenizzati: {e}")
     print("Assicurati che la cella precedente abbia salvato correttamente i dati in", SAVE_PATH_TOKENIZED)
@@ -154,9 +152,9 @@ except Exception as e:
 """#Caricamento dataset OpenLLMText tokenizzato"""
 
 # Percorsi dei dataset tokenizzati
-train_path = "/content/drive/MyDrive/OpenTextLLM/tokenized_datasets_v2/train"
-valid_path = "/content/drive/MyDrive/OpenTextLLM/tokenized_datasets_v2/validation"
-test_path  = "/content/drive/MyDrive/OpenTextLLM/tokenized_datasets_v2/test"
+train_path = "./train"
+valid_path = "./validation"
+test_path  = "./test"
 
 # Caricamento dei dataset tokenizzati
 train_dataset = load_from_disk(train_path)
@@ -209,7 +207,7 @@ def compute_metrics(pred):
 
 #Parametri di addestramento
 training_args = TrainingArguments(
-    output_dir="/content/drive/MyDrive/roberta_finetuned_balanced_v2",
+    output_dir="./roberta_finetuned",
     eval_strategy="epoch",
     save_strategy="epoch",
     learning_rate=2e-5,
@@ -237,8 +235,7 @@ trainer = Trainer(
 trainer.train()
 
 # Definizione directory di salvataggio e salvataggio stesso del modello fine-tunato
-save_path = "/content/drive/MyDrive/Opentext_processed/roberta_finetuned_v2"
-
+save_path = "./roberta_finetuned"
 trainer.model.save_pretrained(save_path)
 
 """#Test del modello fine-tuned"""
@@ -268,13 +265,13 @@ def predict_texts(texts, model, tokenizer, device='cuda'):
     return preds.cpu().numpy(), probs.cpu().numpy()
 
 #Funzione di ricaricamento dell'ultimo checkpoint del modello
-model_path = "/content/drive/MyDrive/Opentext_processed/roberta_finetuned_v2"
+model_path = ".roberta_finetuned"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = load_model(model_path, device)
 tokenizer = load_tokenizer("roberta-base")
 
 #Caricamento del dataset di test tokenizzato
-SAVE_PATH_TOKENIZED = '/content/drive/MyDrive/OpenTextLLM/tokenized_datasets_v2'
+SAVE_PATH_TOKENIZED = './tokenized_datasets'
 test_dataset_path = os.path.join(SAVE_PATH_TOKENIZED, 'test')
 
 try:
@@ -351,22 +348,21 @@ else:
 
 """#Test sul dataset M4"""
 
-#Test su M4
+# Test su M4
 !git clone https://github.com/mbzuai-nlp/M4.git
 
 # Percorso del dataset M4
-m4_path = "/content/M4"
+m4_path = "./M4"
 
 # Percorso del file JSONL
-file_path = "/content/M4/data/reddit_bloomz.jsonl"
+file_path = "./M4/data/reddit_bloomz.jsonl"
 
-# Carica in pandas
+# Carica in pandas e stampa l'head del dataset
 df = pd.read_json(file_path, lines=True)
-
 print(df.head())
 
-model_path = "/content/drive/MyDrive/roberta_finetuned_balanced_v2/checkpoint-12804"
-output_csv = "/content/drive/MyDrive/Opentext_processed/M4_reddit_predictions.csv"
+model_path = "./roberta_finetuned/checkpoint-12804"
+output_csv = "./Opentext_processed/M4_reddit_predictions.csv"
 
 
 # Carica modello e tokenizer
@@ -380,9 +376,13 @@ tokenizer = RobertaTokenizerFast.from_pretrained("roberta-base")
 # Funzione di predizione
 def predict_texts(texts, batch_size=16):
     all_preds, all_probs = [], []
-    # tqdm per vedere l'avanzamento dei batch
-    for i in tqdm(range(0, len(texts), batch_size), desc="Inferenza batch"):
-        batch_texts = texts[i:i+batch_size]
+    non_empty_texts = [text for text in texts if text is not None and text.strip()]
+    if not non_empty_texts:
+        print("No non-empty texts to process.")
+        return [], []
+        
+    for i in tqdm(range(0, len(non_empty_texts), batch_size), desc="Inferenza batch"):
+        batch_texts = non_empty_texts[i:i+batch_size]
         inputs = tokenizer(batch_texts, padding=True, truncation=True, max_length=512, return_tensors='pt')
         inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
@@ -399,7 +399,7 @@ texts, labels = [], []
 
 for root, dirs, files in os.walk(m4_path):
     for file in files:
-        if file.endswith(".jsonl") and "reddit_" in file.lower():  # filtra solo reddit
+        if file.endswith(".jsonl") and "wikihow_" in file.lower():
             path = os.path.join(root, file)
             with open(path, "r", encoding="utf-8") as f:
                 for line in f:
@@ -410,12 +410,19 @@ for root, dirs, files in os.walk(m4_path):
                         item = json.loads(line)
                     except json.JSONDecodeError:
                         continue
+                    if item is None:
+                        continue
                     # Aggiungi testo umano
-                    texts.append(item.get("human_text",""))
-                    labels.append(0)
+                    human_text = item.get("human_text","")
+                    if human_text is not None:
+                        texts.append(human_text)
+                        labels.append(0)
                     # Aggiungi testo generato
-                    texts.append(item.get("machine_text",""))
-                    labels.append(1)
+                    machine_text = item.get("machine_text","")
+                    if machine_text is not None:
+                        texts.append(machine_text)
+                        labels.append(1)
+
 
 print(f"Totale esempi da predire: {len(texts)}")
 
@@ -423,9 +430,10 @@ print(f"Totale esempi da predire: {len(texts)}")
 
 preds, probs = predict_texts(texts, batch_size=16)
 
+non_empty_indices = [i for i, text in enumerate(texts) if text is not None and text.strip()]
 df_results = pd.DataFrame({
-    "text": texts,
-    "label": labels,
+    "text": [texts[i] for i in non_empty_indices],
+    "label": [labels[i] for i in non_empty_indices],
     "prediction": preds,
     "probabilities": probs
 })
@@ -437,23 +445,23 @@ print("Predizioni salvate in:", output_csv)
 # Calcolo metriche di classificazione
 
 print("\n--- Metriche di classificazione sul subset Reddit ---")
-accuracy = accuracy_score(labels, preds)
+non_empty_labels = [labels[i] for i in non_empty_indices]
+accuracy = accuracy_score(non_empty_labels, preds)
 print(f"Accuracy: {accuracy:.4f}\n")
-print(classification_report(labels, preds, target_names=["Human", "LLM"]))
+print(classification_report(non_empty_labels, preds, target_names=["Human", "LLM"]))
 
-if 'labels' in locals() and 'preds' in locals():
-    print("Variabili labels e preds trovate. Calcolo e stampa della Confusion Matrix...")
+if 'non_empty_labels' in locals() and 'preds' in locals():
+    print("Variables non_empty_labels and preds found. Calculating and printing Confusion Matrix...")
 
-    cm = confusion_matrix(labels, preds)
+    cm = confusion_matrix(non_empty_labels, preds)
 
-    cm_df = pd.DataFrame(cm, index=["Vero Umano", "Vero LLM"], columns=["Predetto Umano", "Predetto LLM"])
-    print("\nMatrice di confusione:")
+    cm_df = pd.DataFrame(cm, index=["True Human", "True LLM"], columns=["Predicted Human", "Predicted LLM"])
+    print("\nConfusion Matrix:")
     print(cm_df)
 
 else:
-    print("Variabili labels o preds non trovate. Esegui la cella di predizione prima di calcolare la Confusion Matrix.")
+    print("Variables non_empty_labels or preds not found. Run the prediction cell before calculating the Confusion Matrix.")
 
-# Commented out IPython magic to ensure Python compatibility.
 # Caricamento dell'estensione tensorboard per la visualizzazione di informazioni sul training dai log
 # %load_ext tensorboard
 
