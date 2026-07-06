@@ -1,6 +1,6 @@
 # AI-Generated Text Detection
 
-This repository contains the code developed for my Master's thesis in "Text Sciences for Digital Professions" titled: **"AI-Generated Text Detection: A Comparative Analysis of White-Box and Black-Box Methods"**.
+This repository contains the code developed for my Master's thesis in Digital Humanities titled: **"AI-Generated Text Detection: A Comparative Analysis of White-Box and Black-Box Methods"**.
 
 ## 🎯 The Project in Brief
 
